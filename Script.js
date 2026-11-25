@@ -19,7 +19,13 @@ async function api(action, data = {}) {
     body: JSON.stringify({ action, token, ...data })
   });
 
-  const result = await response.json();
+  let result;
+
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error(`伺服器回傳格式錯誤：HTTP ${response.status}`);
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -63,18 +69,32 @@ function showNotice(title, message) {
 }
 
 // 顯示抽籤結果
-function showResult(assignment) {
+function showResult(data) {
   const box = document.createElement("section");
   box.id = "draw-result-area";
 
   const heading = document.createElement("h2");
   heading.textContent = "🎉 你的抽籤結果";
 
-  const resultText = document.createElement("p");
-  resultText.textContent =
-    assignment.phonetic_hint || "請聯絡主辦人確認結果";
+  const participant = document.createElement("p");
+  participant.textContent =
+    `抽籤對象編號：${data.participant_no ?? "未提供"}`;
 
-  box.append(heading, resultText);
+  const phonetic = document.createElement("p");
+  phonetic.textContent =
+    `注音縮寫線索：${data.result?.phonetic_hint || "無"}`;
+
+  const direction = document.createElement("p");
+  direction.textContent =
+    `方向提示：${data.result?.direction_hint || "無"}`;
+
+  box.append(
+    heading,
+    participant,
+    phonetic,
+    direction
+  );
+
   main.appendChild(box);
 }
 
@@ -217,8 +237,12 @@ async function init() {
       try {
         const drawResult = await api("get_result");
 
-        if (drawResult && drawResult.assignment) {
-          showResult(drawResult.assignment);
+        if (
+          drawResult &&
+          drawResult.result &&
+          typeof drawResult.result === "object"
+        ) {
+          showResult(drawResult);
         } else {
           showNotice(
             "抽籤結果格式異常",
