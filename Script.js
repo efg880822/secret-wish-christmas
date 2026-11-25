@@ -36,7 +36,7 @@ async function api(action, data = {}) {
   return result;
 }
 
-// 更新首頁活動狀態
+// 更新活動狀態
 function updateEventStatus(status) {
   const statusBox = document.getElementById("event-status");
 
@@ -98,7 +98,7 @@ function showResult(data) {
   main.appendChild(box);
 }
 
-// 顯示表單訊息
+// 顯示許願表單訊息
 function showMessage(message, isError = false) {
   const box = document.getElementById("wish-message");
 
@@ -142,7 +142,7 @@ function createWishForm(wish = null) {
 
   main.appendChild(area);
 
-  // 載入之前儲存的願望
+  // 載入已儲存的願望
   if (wish) {
     document.getElementById("phonetic").value =
       wish.phonetic_hint || "";
@@ -237,19 +237,17 @@ async function init() {
       try {
         const drawResult = await api("get_result");
 
-        // 確認伺服器回傳的結果欄位
+        // 直接讀取伺服器回傳的 result
         if (
           drawResult &&
           drawResult.result &&
-          typeof drawResult.result === "object" &&
-          drawResult.result.phonetic_hint !== undefined &&
-          drawResult.result.direction_hint !== undefined
+          typeof drawResult.result === "object"
         ) {
           showResult(drawResult);
         } else {
           showNotice(
-            "抽籤結果格式異常",
-            "伺服器回傳：" + JSON.stringify(drawResult)
+            "抽籤結果讀取失敗",
+            "找不到抽籤結果：" + JSON.stringify(drawResult)
           );
         }
 
