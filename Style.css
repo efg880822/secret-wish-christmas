@@ -74,6 +74,95 @@ button {
   cursor: pointer;
 }
 
+/* 聖誕許願表單美化 */
+#wish-form-area {
+  width: 100%;
+  margin: 28px auto;
+  padding: 28px 22px;
+  background: #fffaf0;
+  color: #173d35;
+  border: 2px solid #e7c77c;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px #0004;
+  text-align: left;
+}
+
+#wish-form-area h2 {
+  font-size: 25px;
+  text-align: center;
+  color: #173d35;
+}
+
+#wish-form-area > p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #52665d;
+  text-align: center;
+}
+
+#wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+#wish-form label {
+  font-size: 19px;
+  font-weight: 800;
+  color: #173d35;
+  margin-top: 8px;
+}
+
+#wish-form input,
+#wish-form textarea {
+  width: 100%;
+  padding: 18px;
+  border: 2px solid #b8c8bb;
+  border-radius: 12px;
+  background: #fff;
+  color: #172b22;
+  font-family: inherit;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+#wish-form input {
+  min-height: 65px;
+}
+
+#wish-form textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+#wish-form input:focus,
+#wish-form textarea:focus {
+  outline: none;
+  border-color: #b33d32;
+  box-shadow: 0 0 0 4px #b33d3220;
+}
+
+#wish-form button {
+  min-height: 60px;
+  margin-top: 16px;
+  font-size: 20px;
+}
+
+#wish-message {
+  min-height: 26px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  #wish-form-area {
+    padding: 24px 18px;
+  }
+}
+
+
 button:hover {
   background: #d35448;
 }
