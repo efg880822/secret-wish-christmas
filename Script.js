@@ -181,13 +181,11 @@ async function init() {
   }
 
   try {
-    // 先取得願望及活動狀態
+    // 取得願望及活動狀態
     const result = await api("get_wish");
 
-    // 同步更新首頁狀態
     updateEventStatus(result.event_status);
 
-    // 確認是否有取得活動狀態
     if (!result.event_status) {
       showNotice(
         "無法確認活動狀態",
@@ -223,14 +221,15 @@ async function init() {
           showResult(drawResult.assignment);
         } else {
           showNotice(
-            "抽籤已完成",
-            "暫時無法讀取結果，請聯絡主辦人。"
+            "抽籤結果格式異常",
+            "伺服器回傳：" + JSON.stringify(drawResult)
           );
         }
+
       } catch (error) {
         showNotice(
-          "抽籤已完成",
-          "暫時無法讀取結果，請聯絡主辦人。"
+          "抽籤結果讀取失敗",
+          "錯誤原因：" + error.message
         );
       }
 
