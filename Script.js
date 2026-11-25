@@ -78,15 +78,15 @@ function showResult(data) {
 
   const participant = document.createElement("p");
   participant.textContent =
-    `抽籤對象編號：${data.participant_no ?? "未提供"}`;
+    `抽籤編號：${data.participant_no ?? "未提供"}`;
 
   const phonetic = document.createElement("p");
   phonetic.textContent =
-    `注音縮寫線索：${data.result?.phonetic_hint || "無"}`;
+    `注音縮寫線索：${data.result.phonetic_hint || "無"}`;
 
   const direction = document.createElement("p");
   direction.textContent =
-    `方向提示：${data.result?.direction_hint || "無"}`;
+    `方向提示：${data.result.direction_hint || "無"}`;
 
   box.append(
     heading,
@@ -237,10 +237,13 @@ async function init() {
       try {
         const drawResult = await api("get_result");
 
+        // 確認伺服器回傳的結果欄位
         if (
           drawResult &&
           drawResult.result &&
-          typeof drawResult.result === "object"
+          typeof drawResult.result === "object" &&
+          drawResult.result.phonetic_hint !== undefined &&
+          drawResult.result.direction_hint !== undefined
         ) {
           showResult(drawResult);
         } else {
