@@ -68,6 +68,70 @@ function showNotice(title, message) {
   main.appendChild(box);
 }
 
+// 固定顯示交換禮物公告
+function showWishRules() {
+  if (document.getElementById("wish-rules-announcement")) {
+    return;
+  }
+
+  const box = document.createElement("section");
+  box.id = "wish-rules-announcement";
+
+  box.innerHTML = `
+    <h2>🎄 交換禮物活動公告</h2>
+
+    <div class="announcement-budget">
+      🎁 禮物預算：NT$300～500
+    </div>
+
+    <div class="announcement-rule">
+      <h3>① 願望注音線索</h3>
+      <p>
+        請使用希望收到的物品名稱，
+        並提供每個中文字的第一個注音符號。
+      </p>
+
+      <div class="announcement-examples">
+        <p>衛生紙 → ㄨㄕㄓ</p>
+        <p>馬克杯 → ㄇㄎㄅ</p>
+        <p>保溫瓶 → ㄅㄨㄆ</p>
+      </div>
+
+      <p>只需要每個中文字的第一個注音，不需要完整注音。</p>
+    </div>
+
+    <div class="announcement-rule">
+      <h3>② 商品價格與購買限制</h3>
+      <ul>
+        <li>請確認商品在一般通路確實能以 NT$300～500 左右購買。</li>
+        <li>請勿許願超出預算太多的商品。</li>
+        <li>請勿填寫冷門、停產或難以購買的商品。</li>
+        <li>請以市面上實際買得到、價格合理的商品為主。</li>
+      </ul>
+    </div>
+
+    <div class="announcement-rule">
+      <h3>③ 主辦方保留最終決定權</h3>
+      <p>
+        若願望不符合活動預算、商品難以取得，
+        或不適合本次活動，主辦方有權要求修改或調整。
+      </p>
+    </div>
+
+    <p class="announcement-footer">
+      🎅 請大家配合活動規則，讓每個人都能收到合適又有趣的禮物！
+    </p>
+  `;
+
+  const status = document.querySelector(".status");
+
+  if (status) {
+    status.insertAdjacentElement("afterend", box);
+  } else {
+    main.prepend(box);
+  }
+}
+
 // 顯示抽籤結果
 function showResult(data) {
   const box = document.createElement("section");
@@ -117,61 +181,6 @@ function createWishForm(wish = null) {
     <h2>🎁 寫下你的聖誕願望</h2>
     <p>請留下兩個線索，讓抽到你的人猜猜你的願望。</p>
 
-    <!-- 交換禮物規則 -->
-    <section class="wish-rules">
-      <h3>🎄 交換禮物活動規則</h3>
-
-      <div class="wish-rule-item">
-        <strong>① 願望注音線索</strong>
-        <p>
-          請填寫希望收到的物品名稱，
-          並提供每個中文字的第一個注音符號，
-          方便抽到你的人猜測禮物。
-        </p>
-
-        <div class="wish-rule-example">
-          <span>衛生紙 → ㄨㄕㄓ</span>
-          <span>馬克杯 → ㄇㄎㄅ</span>
-          <span>保溫瓶 → ㄅㄨㄆ</span>
-        </div>
-
-        <p>
-          請使用每個中文字的第一個注音符號，
-          不需要填寫完整注音。
-        </p>
-      </div>
-
-      <div class="wish-rule-item wish-budget">
-        <strong>② 禮物預算：NT$300～500</strong>
-
-        <p>
-          請確認許願的物品在一般通路，
-          確實能以新台幣 300～500 元左右購買。
-        </p>
-
-        <ul>
-          <li>請勿許願超出預算太多的商品。</li>
-          <li>請勿填寫冷門、停產或難以購買的商品。</li>
-          <li>請以市面上實際買得到、價格合理的商品為主。</li>
-        </ul>
-      </div>
-
-      <div class="wish-rule-item">
-        <strong>③ 主辦方保留最終決定權</strong>
-        <p>
-          若許願內容不符合活動預算、
-          商品難以取得，或不適合本次交換禮物活動，
-          主辦方有權要求修改或調整。
-        </p>
-      </div>
-
-      <p class="wish-rules-footer">
-        🎅 請大家配合活動規則，
-        讓每個人都能收到一份合適又有趣的禮物！
-      </p>
-    </section>
-
-    <!-- 原本的許願表單 -->
     <form id="wish-form">
       <label for="phonetic">注音縮寫線索</label>
 
@@ -256,6 +265,9 @@ async function init() {
     );
     return;
   }
+
+  // 有有效參加者連結時，先顯示公告
+  showWishRules();
 
   try {
     // 取得願望及活動狀態
