@@ -74,7 +74,11 @@ button {
   cursor: pointer;
 }
 
-/* 聖誕許願表單美化 */
+button:hover {
+  background: #d35448;
+}
+
+/* 聖誕許願表單 */
 #wish-form-area {
   width: 100%;
   margin: 28px auto;
@@ -100,6 +104,96 @@ button {
   text-align: center;
 }
 
+/* 交換禮物規則區 */
+.wish-rules {
+  margin: 22px 0 26px;
+  padding: 20px 18px;
+  background: #f4f0e5;
+  border: 1px solid #d8c99f;
+  border-radius: 14px;
+  color: #173d35;
+  text-align: left;
+}
+
+.wish-rules h3 {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 20px;
+  color: #173d35;
+}
+
+.wish-rule-item {
+  padding: 14px 0;
+  border-top: 1px solid #ded6c3;
+}
+
+.wish-rule-item:first-of-type {
+  border-top: none;
+}
+
+.wish-rule-item strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #245b45;
+}
+
+.wish-rule-item p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #46594f;
+}
+
+.wish-rule-example {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 0;
+  padding: 12px;
+  background: #fffaf0;
+  border-radius: 9px;
+  color: #173d35;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* 預算醒目區 */
+.wish-rule-item.wish-budget {
+  margin: 8px -8px;
+  padding: 15px 10px;
+  background: #fff4df;
+  border: 1px solid #e7c77c;
+  border-radius: 10px;
+}
+
+.wish-rule-item.wish-budget strong {
+  color: #a9362d;
+  font-size: 19px;
+}
+
+.wish-rule-item.wish-budget ul {
+  padding-left: 22px;
+  margin: 10px 0;
+}
+
+.wish-rule-item.wish-budget li {
+  margin: 7px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #46594f;
+}
+
+.wish-rules .wish-rules-footer {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #ded6c3;
+  text-align: center;
+  font-weight: bold;
+  color: #245b45;
+}
+
+/* 原本的許願表單 */
 #wish-form {
   display: flex;
   flex-direction: column;
@@ -149,6 +243,11 @@ button {
   font-size: 20px;
 }
 
+#wish-form button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 #wish-message {
   min-height: 26px;
   font-size: 16px;
@@ -156,19 +255,37 @@ button {
   text-align: center;
 }
 
-@media (max-width: 600px) {
-  #wish-form-area {
-    padding: 24px 18px;
-  }
-}
-
-
-button:hover {
-  background: #d35448;
-}
-
 .footer {
   margin-top: 40px;
   color: #d6c9a9;
   font-size: 12px;
+}
+
+/* 手機版 */
+@media (max-width: 600px) {
+  body {
+    padding: 12px;
+  }
+
+  .container {
+    padding: 20px 10px;
+  }
+
+  #wish-form-area {
+    padding: 24px 18px;
+  }
+
+  .wish-rules {
+    padding: 17px 14px;
+  }
+
+  .wish-rule-item p,
+  .wish-rule-item.wish-budget li {
+    font-size: 14px;
+  }
+
+  #wish-form input,
+  #wish-form textarea {
+    font-size: 18px;
+  }
 }
