@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secret Wish｜管理員後台</title>
   <meta name="theme-color" content="#173d35">
+
   <style>
     * { box-sizing: border-box; }
 
@@ -19,11 +20,12 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
     h1 { text-align: center; }
+
     .subtitle {
       text-align: center;
       color: #e7c77c;
@@ -33,7 +35,7 @@
     .panel {
       background: #fffaf0;
       color: #173d35;
-      padding: 24px;
+      padding: 22px;
       border-radius: 18px;
       margin: 20px 0;
     }
@@ -49,24 +51,26 @@
 
     button {
       width: 100%;
-      padding: 15px;
-      margin: 8px 0;
+      padding: 14px;
+      margin: 7px 0;
       border: 0;
       border-radius: 10px;
       background: #b33d32;
       color: white;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
     }
 
     button:disabled {
-      opacity: .5;
+      opacity: .45;
       cursor: not-allowed;
     }
 
     .secondary { background: #245b45; }
+    .success { background: #24734b; }
     .danger { background: #8d2929; }
+    .warning { background: #a66a18; }
 
     .hidden { display: none; }
 
@@ -74,14 +78,22 @@
       font-size: 22px;
       font-weight: bold;
       text-align: center;
-      margin: 16px 0;
+      margin: 18px 0;
+    }
+
+    .status-card {
+      background: #edf3ec;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 14px 0;
+      line-height: 1.8;
     }
 
     .participant {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 13px 4px;
+      padding: 12px 4px;
       border-bottom: 1px solid #ddd8ca;
       gap: 12px;
     }
@@ -97,8 +109,23 @@
 
     .hint {
       color: #65766d;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .section-title {
+      margin-top: 25px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #ddd8ca;
+    }
+
+    .danger-note {
+      color: #8d2929;
+      background: #f9e9e5;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.7;
     }
   </style>
 </head>
@@ -111,15 +138,29 @@
     <section class="panel" id="login-panel">
       <h2>管理員登入</h2>
       <p class="hint">請輸入主辦人設定的管理員密碼。</p>
-      <input id="admin-key" type="password"
-        placeholder="管理員密碼" autocomplete="current-password">
+
+      <input
+        id="admin-key"
+        type="password"
+        placeholder="管理員密碼"
+        autocomplete="current-password"
+      >
+
       <button id="login-button">登入管理後台</button>
     </section>
 
     <section class="panel hidden" id="dashboard">
       <h2>🎁 活動管理</h2>
-      <p>活動狀態：<strong id="event-status">讀取中</strong></p>
-      <div class="progress" id="progress">已提交 0 / 20 人</div>
+
+      <div class="status-card">
+        目前活動狀態：
+        <strong id="event-status">讀取中</strong>
+        <div id="status-description" class="hint"></div>
+      </div>
+
+      <div class="progress" id="progress">
+        已提交 0 / 20 人
+      </div>
 
       <button class="secondary" id="refresh-button">
         🔄 更新提交狀態
@@ -127,15 +168,36 @@
 
       <div id="participants"></div>
 
-      <hr style="border:0;border-top:1px solid #ddd8ca;margin:22px 0">
+      <h3 class="section-title">✍️ 許願控制</h3>
+
+      <button class="success" id="open-button">
+        🔓 開啟許願
+      </button>
 
       <button class="danger" id="close-button">
         🔒 關閉許願
       </button>
 
+      <p class="hint">
+        開啟後，參加者可以填寫或修改願望。
+        關閉後，參加者將無法再提交或修改。
+      </p>
+
+      <h3 class="section-title">🎉 抽籤控制</h3>
+
       <button id="draw-button">
         🎉 執行正式抽籤
       </button>
+
+      <button class="warning" id="reset-button">
+        ♻️ 重置抽籤並準備重新抽
+      </button>
+
+      <p class="danger-note">
+        重置抽籤會刪除目前所有配對結果，但會保留 20 位參加者、
+        專屬連結及已提交的願望。重置後活動會回到「已關閉」，
+        你可以再手動開啟許願，或直接重新抽籤。
+      </p>
 
       <p class="hint">
         抽籤完成後，參加者只能查看自己的結果。
@@ -172,7 +234,9 @@ async function api(action, data = {}, adminKey = "") {
   };
 
   if (adminKey) headers["x-admin-key"] = adminKey;
-  if (adminSession) headers["x-admin-session"] = adminSession;
+  if (adminSession) {
+    headers["x-admin-session"] = adminSession;
+  }
 
   const response = await fetch(FUNCTION_URL, {
     method: "POST",
@@ -191,9 +255,45 @@ async function api(action, data = {}, adminKey = "") {
   return result;
 }
 
-function setButtonLoading(button, loading, text) {
+function setButtonLoading(button, loading, originalText) {
   button.disabled = loading;
-  button.textContent = loading ? "處理中..." : text;
+  button.textContent = loading ? "處理中..." : originalText;
+}
+
+function statusLabel(status) {
+  const labels = {
+    preparing: "準備中",
+    wishing: "開放許願中",
+    closed: "已關閉許願",
+    drawn: "抽籤已完成"
+  };
+
+  return labels[status] || status || "未知";
+}
+
+function updateControls(status, submittedCount) {
+  $("open-button").disabled =
+    !["preparing", "closed"].includes(status);
+
+  $("close-button").disabled =
+    status !== "wishing";
+
+  $("draw-button").disabled =
+    !["wishing", "closed"].includes(status) ||
+    submittedCount < 2;
+
+  $("reset-button").disabled =
+    !["drawn", "closed"].includes(status);
+
+  const descriptions = {
+    preparing: "活動尚未開放，按下「開啟許願」即可開始。",
+    wishing: "參加者目前可以提交或修改願望。",
+    closed: "許願已關閉，可以執行抽籤或重置舊配對。",
+    drawn: "抽籤已完成。如需重新抽籤，請先執行重置。"
+  };
+
+  $("status-description").textContent =
+    descriptions[status] || "";
 }
 
 // 管理員登入
@@ -217,6 +317,7 @@ $("login-button").addEventListener("click", async () => {
     }
 
     adminSession = result.session;
+
     $("login-panel").classList.add("hidden");
     $("dashboard").classList.remove("hidden");
     $("admin-key").value = "";
@@ -235,50 +336,37 @@ async function refreshStatus() {
   try {
     const result = await api("admin_status");
 
-    $("event-status").textContent =
-      result.event_status || "未知";
-
+    const status = result.event_status;
     const participants = result.participants || [];
+
     const submittedCount = participants.filter(
       p => p.submitted === true
     ).length;
 
+    $("event-status").textContent = statusLabel(status);
+
     $("progress").textContent =
-      `已提交 ${submittedCount} / ${participants.length || 20} 人`;
+      `已提交 ${submittedCount} / ${result.total_count ?? participants.length} 人`;
 
     const list = $("participants");
     list.replaceChildren();
 
-    participants.forEach((p, index) => {
+    participants.forEach((p) => {
       const row = document.createElement("div");
       row.className = "participant";
 
       const name = document.createElement("span");
-      name.textContent =
-        `參加者 ${p.number || p.participant_number || index + 1}`;
+      name.textContent = `參加者 ${p.participant_no}`;
 
-      const status = document.createElement("strong");
-      status.textContent = p.submitted ? "已提交 ✓" : "尚未提交";
-      status.className = p.submitted ? "done" : "pending";
+      const state = document.createElement("strong");
+      state.textContent = p.submitted ? "已提交 ✓" : "尚未提交";
+      state.className = p.submitted ? "done" : "pending";
 
-      row.append(name, status);
+      row.append(name, state);
       list.appendChild(row);
     });
 
-    const eventStatus = result.event_status;
-
-    $("close-button").disabled = eventStatus !== "wishing";
-    $("draw-button").disabled =
-      !["wishing", "closed"].includes(eventStatus) ||
-      submittedCount < 2;
-
-    if (eventStatus === "drawn") {
-      $("close-button").disabled = true;
-      $("draw-button").disabled = true;
-      message("抽籤已完成！");
-    } else if (eventStatus === "closed") {
-      message("許願已關閉，可以執行抽籤。");
-    }
+    updateControls(status, submittedCount);
   } catch (error) {
     message(error.message, true);
   }
@@ -286,9 +374,29 @@ async function refreshStatus() {
 
 $("refresh-button").addEventListener("click", refreshStatus);
 
+// 開啟許願
+$("open-button").addEventListener("click", async () => {
+  if (!confirm("確定要開啟許願嗎？參加者將可以提交或修改願望。")) {
+    return;
+  }
+
+  const button = $("open-button");
+  setButtonLoading(button, true, "🔓 開啟許願");
+
+  try {
+    const result = await api("open_wishing");
+    message(result.message || "許願已開啟！");
+    await refreshStatus();
+  } catch (error) {
+    message(error.message, true);
+  } finally {
+    setButtonLoading(button, false, "🔓 開啟許願");
+  }
+});
+
 // 關閉許願
 $("close-button").addEventListener("click", async () => {
-  if (!confirm("確定要關閉許願嗎？關閉後參加者將不能再修改願望。")) {
+  if (!confirm("確定要關閉許願嗎？參加者將不能再修改願望。")) {
     return;
   }
 
@@ -308,7 +416,7 @@ $("close-button").addEventListener("click", async () => {
 
 // 執行抽籤
 $("draw-button").addEventListener("click", async () => {
-  if (!confirm("確定要執行正式抽籤嗎？抽籤完成後無法重新抽籤。")) {
+  if (!confirm("確定要執行正式抽籤嗎？抽籤完成後若要重抽，必須先重置。")) {
     return;
   }
 
@@ -326,11 +434,46 @@ $("draw-button").addEventListener("click", async () => {
   }
 });
 
+// 重置抽籤
+$("reset-button").addEventListener("click", async () => {
+  const firstConfirm = confirm(
+    "確定要重置抽籤嗎？\n\n目前所有人的抽籤配對將被清除。"
+  );
+
+  if (!firstConfirm) return;
+
+  const secondConfirm = confirm(
+    "最後確認：確定要刪除舊配對並保留所有已提交的願望嗎？\n\n此操作無法還原原本配對。"
+  );
+
+  if (!secondConfirm) return;
+
+  const button = $("reset-button");
+  setButtonLoading(button, true, "♻️ 重置抽籤並準備重新抽");
+
+  try {
+    const result = await api("reset_draw");
+    message(result.message || "抽籤已重置！");
+    await refreshStatus();
+  } catch (error) {
+    message(error.message, true);
+    await refreshStatus();
+  } finally {
+    setButtonLoading(
+      button,
+      false,
+      "♻️ 重置抽籤並準備重新抽"
+    );
+  }
+});
+
 // 登出
 $("logout-button").addEventListener("click", () => {
   adminSession = "";
+
   $("dashboard").classList.add("hidden");
   $("login-panel").classList.remove("hidden");
+
   message("已登出管理員帳號。");
 });
 </script>
