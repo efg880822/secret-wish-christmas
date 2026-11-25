@@ -117,16 +117,73 @@ function createWishForm(wish = null) {
     <h2>🎁 寫下你的聖誕願望</h2>
     <p>請留下兩個線索，讓抽到你的人猜猜你的願望。</p>
 
+    <!-- 交換禮物規則 -->
+    <section class="wish-rules">
+      <h3>🎄 交換禮物活動規則</h3>
+
+      <div class="wish-rule-item">
+        <strong>① 願望注音線索</strong>
+        <p>
+          請填寫希望收到的物品名稱，
+          並提供每個中文字的第一個注音符號，
+          方便抽到你的人猜測禮物。
+        </p>
+
+        <div class="wish-rule-example">
+          <span>衛生紙 → ㄨㄕㄓ</span>
+          <span>馬克杯 → ㄇㄎㄅ</span>
+          <span>保溫瓶 → ㄅㄨㄆ</span>
+        </div>
+
+        <p>
+          請使用每個中文字的第一個注音符號，
+          不需要填寫完整注音。
+        </p>
+      </div>
+
+      <div class="wish-rule-item wish-budget">
+        <strong>② 禮物預算：NT$300～500</strong>
+
+        <p>
+          請確認許願的物品在一般通路，
+          確實能以新台幣 300～500 元左右購買。
+        </p>
+
+        <ul>
+          <li>請勿許願超出預算太多的商品。</li>
+          <li>請勿填寫冷門、停產或難以購買的商品。</li>
+          <li>請以市面上實際買得到、價格合理的商品為主。</li>
+        </ul>
+      </div>
+
+      <div class="wish-rule-item">
+        <strong>③ 主辦方保留最終決定權</strong>
+        <p>
+          若許願內容不符合活動預算、
+          商品難以取得，或不適合本次交換禮物活動，
+          主辦方有權要求修改或調整。
+        </p>
+      </div>
+
+      <p class="wish-rules-footer">
+        🎅 請大家配合活動規則，
+        讓每個人都能收到一份合適又有趣的禮物！
+      </p>
+    </section>
+
+    <!-- 原本的許願表單 -->
     <form id="wish-form">
       <label for="phonetic">注音縮寫線索</label>
+
       <input
         id="phonetic"
         maxlength="100"
-        placeholder="例如：ㄌㄅㄉ"
+        placeholder="例如：ㄨㄕㄓ"
         required
       >
 
       <label for="direction">方向提示</label>
+
       <textarea
         id="direction"
         maxlength="300"
@@ -237,7 +294,6 @@ async function init() {
       try {
         const drawResult = await api("get_result");
 
-        // 直接讀取伺服器回傳的 result
         if (
           drawResult &&
           drawResult.result &&
