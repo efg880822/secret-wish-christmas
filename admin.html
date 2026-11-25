@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Wish｜管理員後台</title>
+  <meta name="theme-color" content="#173d35">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      min-height: 100vh;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      background: linear-gradient(135deg, #102f29, #245b45);
+      color: #fff8e8;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 { text-align: center; }
+    .subtitle {
+      text-align: center;
+      color: #e7c77c;
+      letter-spacing: 3px;
+    }
+
+    .panel {
+      background: #fffaf0;
+      color: #173d35;
+      padding: 24px;
+      border-radius: 18px;
+      margin: 20px 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #b8c8bb;
+      border-radius: 10px;
+      font-size: 17px;
+      margin: 12px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin: 8px 0;
+      border: 0;
+      border-radius: 10px;
+      background: #b33d32;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .secondary { background: #245b45; }
+    .danger { background: #8d2929; }
+
+    .hidden { display: none; }
+
+    .progress {
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .participant {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 4px;
+      border-bottom: 1px solid #ddd8ca;
+      gap: 12px;
+    }
+
+    .done { color: #24734b; font-weight: bold; }
+    .pending { color: #b33d32; font-weight: bold; }
+
+    #message {
+      text-align: center;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .hint {
+      color: #65766d;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <p class="subtitle">MERRY CHRISTMAS 2026</p>
+    <h1>🎄 管理員後台</h1>
+
+    <section class="panel" id="login-panel">
+      <h2>管理員登入</h2>
+      <p class="hint">請輸入主辦人設定的管理員密碼。</p>
+      <input id="admin-key" type="password"
+        placeholder="管理員密碼" autocomplete="current-password">
+      <button id="login-button">登入管理後台</button>
+    </section>
+
+    <section class="panel hidden" id="dashboard">
+      <h2>🎁 活動管理</h2>
+      <p>活動狀態：<strong id="event-status">讀取中</strong></p>
+      <div class="progress" id="progress">已提交 0 / 20 人</div>
+
+      <button class="secondary" id="refresh-button">
+        🔄 更新提交狀態
+      </button>
+
+      <div id="participants"></div>
+
+      <hr style="border:0;border-top:1px solid #ddd8ca;margin:22px 0">
+
+      <button class="danger" id="close-button">
+        🔒 關閉許願
+      </button>
+
+      <button id="draw-button">
+        🎉 執行正式抽籤
+      </button>
+
+      <p class="hint">
+        抽籤完成後，參加者只能查看自己的結果。
+        管理員後台不會顯示配對名單。
+      </p>
+
+      <button class="secondary" id="logout-button">
+        登出
+      </button>
+    </section>
+
+    <p id="message"></p>
+  </main>
+
+<script>
+const SUPABASE_URL = "https://ojktycjkjoeqskvqzask.supabase.co";
+const SUPABASE_KEY = "sb_publishable_OKBRdTpZlGS-nFCXugSSpg_JEtFn4Wu";
+const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/hyper-function`;
+
+let adminSession = "";
+
+const $ = (id) => document.getElementById(id);
+
+function message(text, error = false) {
+  $("message").textContent = text;
+  $("message").style.color = error ? "#ffb3a9" : "#e7c77c";
+}
+
+async function api(action, data = {}, adminKey = "") {
+  const headers = {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_KEY,
+    "Authorization": `Bearer ${SUPABASE_KEY}`
+  };
+
+  if (adminKey) headers["x-admin-key"] = adminKey;
+  if (adminSession) headers["x-admin-session"] = adminSession;
+
+  const response = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action, ...data })
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || result.success === false) {
+    throw new Error(
+      result.message || result.error || `伺服器錯誤：${response.status}`
+    );
+  }
+
+  return result;
+}
+
+function setButtonLoading(button, loading, text) {
+  button.disabled = loading;
+  button.textContent = loading ? "處理中..." : text;
+}
+
+// 管理員登入
+$("login-button").addEventListener("click", async () => {
+  const key = $("admin-key").value.trim();
+
+  if (!key) {
+    message("請輸入管理員密碼。", true);
+    return;
+  }
+
+  const button = $("login-button");
+  setButtonLoading(button, true, "登入管理後台");
+  message("");
+
+  try {
+    const result = await api("admin_login", {}, key);
+
+    if (!result.session) {
+      throw new Error("登入成功，但沒有取得管理員登入憑證。");
+    }
+
+    adminSession = result.session;
+    $("login-panel").classList.add("hidden");
+    $("dashboard").classList.remove("hidden");
+    $("admin-key").value = "";
+
+    message("管理員登入成功！");
+    await refreshStatus();
+  } catch (error) {
+    message(error.message, true);
+  } finally {
+    setButtonLoading(button, false, "登入管理後台");
+  }
+});
+
+// 更新提交狀態
+async function refreshStatus() {
+  try {
+    const result = await api("admin_status");
+
+    $("event-status").textContent =
+      result.event_status || "未知";
+
+    const participants = result.participants || [];
+    const submittedCount = participants.filter(
+      p => p.submitted === true
+    ).length;
+
+    $("progress").textContent =
+      `已提交 ${submittedCount} / ${participants.length || 20} 人`;
+
+    const list = $("participants");
+    list.replaceChildren();
+
+    participants.forEach((p, index) => {
+      const row = document.createElement("div");
+      row.className = "participant";
+
+      const name = document.createElement("span");
+      name.textContent =
+        `參加者 ${p.number || p.participant_number || index + 1}`;
+
+      const status = document.createElement("strong");
+      status.textContent = p.submitted ? "已提交 ✓" : "尚未提交";
+      status.className = p.submitted ? "done" : "pending";
+
+      row.append(name, status);
+      list.appendChild(row);
+    });
+
+    const eventStatus = result.event_status;
+
+    $("close-button").disabled = eventStatus !== "wishing";
+    $("draw-button").disabled =
+      !["wishing", "closed"].includes(eventStatus) ||
+      submittedCount < 2;
+
+    if (eventStatus === "drawn") {
+      $("close-button").disabled = true;
+      $("draw-button").disabled = true;
+      message("抽籤已完成！");
+    } else if (eventStatus === "closed") {
+      message("許願已關閉，可以執行抽籤。");
+    }
+  } catch (error) {
+    message(error.message, true);
+  }
+}
+
+$("refresh-button").addEventListener("click", refreshStatus);
+
+// 關閉許願
+$("close-button").addEventListener("click", async () => {
+  if (!confirm("確定要關閉許願嗎？關閉後參加者將不能再修改願望。")) {
+    return;
+  }
+
+  const button = $("close-button");
+  setButtonLoading(button, true, "🔒 關閉許願");
+
+  try {
+    const result = await api("close_wishing");
+    message(result.message || "許願已關閉！");
+    await refreshStatus();
+  } catch (error) {
+    message(error.message, true);
+  } finally {
+    setButtonLoading(button, false, "🔒 關閉許願");
+  }
+});
+
+// 執行抽籤
+$("draw-button").addEventListener("click", async () => {
+  if (!confirm("確定要執行正式抽籤嗎？抽籤完成後無法重新抽籤。")) {
+    return;
+  }
+
+  const button = $("draw-button");
+  setButtonLoading(button, true, "🎉 執行正式抽籤");
+
+  try {
+    const result = await api("draw");
+    message(result.message || "抽籤完成！");
+    await refreshStatus();
+  } catch (error) {
+    message(error.message, true);
+  } finally {
+    setButtonLoading(button, false, "🎉 執行正式抽籤");
+  }
+});
+
+// 登出
+$("logout-button").addEventListener("click", () => {
+  adminSession = "";
+  $("dashboard").classList.add("hidden");
+  $("login-panel").classList.remove("hidden");
+  message("已登出管理員帳號。");
+});
+</script>
+</body>
+</html>
