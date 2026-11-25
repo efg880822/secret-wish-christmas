@@ -1,10 +1,10 @@
+
 const SUPABASE_URL = "https://ojktycjkjoeqskvqzask.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OKBRdTpZlGS-nFCXugSSpg_JEtFn4Wu";
 const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/hyper-function`;
 
 const params = new URLSearchParams(location.search);
 const token = params.get("token");
-
 const main = document.querySelector("main");
 
 async function api(action, data = {}) {
@@ -27,19 +27,45 @@ async function api(action, data = {}) {
   return result;
 }
 
+function showNotice(title, message) {
+  const box = document.createElement("section");
+  box.id = "event-notice";
+
+  const heading = document.createElement("h2");
+  heading.textContent = title;
+
+  const description = document.createElement("p");
+  description.textContent = message;
+
+  box.append(heading, description);
+  main.appendChild(box);
+}
+
+function showResult(assignment) {
+  const box = document.createElement("section");
+  box.innerHTML = `
+    <h2>🎉 你的抽籤結果</h2>
+    <p id="draw-result"></p>
+  `;
+
+  box.querySelector("#draw-result").textContent =
+    assignment.phonetic_hint || "請聯絡主辦人確認結果";
+
+  main.appendChild(box);
+}
+
 function showMessage(message, isError = false) {
-  let box = document.getElementById("wish-message");
+  const box = document.getElementById("wish-message");
   if (!box) return;
+
   box.textContent = message;
   box.style.color = isError ? "#b42318" : "#24734b";
 }
 
 function createWishForm(wish = null) {
-  const old = document.getElementById("wish-form-area");
-  if (old) old.remove();
-
   const area = document.createElement("section");
   area.id = "wish-form-area";
+
   area.innerHTML = `
     <h2>🎁 寫下你的聖誕願望</h2>
     <p>請留下兩個線索，讓抽到你的人猜猜你的願望。</p>
@@ -88,6 +114,7 @@ function createWishForm(wish = null) {
         phonetic_hint,
         direction_hint
       });
+
       showMessage(result.message || "願望已儲存！");
     } catch (error) {
       showMessage(error.message, true);
@@ -100,9 +127,10 @@ function createWishForm(wish = null) {
 
 async function init() {
   if (!token) {
-    const notice = document.createElement("p");
-    notice.textContent = "請使用主辦人提供的專屬許願連結。";
-    main.appendChild(notice);
+    showNotice(
+      "請使用專屬許願連結",
+      "請使用主辦人提供的專屬許願連結。"
+    );
     return;
   }
 
@@ -110,27 +138,52 @@ async function init() {
     const result = await api("get_result");
 
     if (result && result.assignment) {
-      const box = document.createElement("section");
-      box.innerHTML = `
-        <h2>🎉 你的抽籤結果</h2>
-        <p id="draw-result"></p>
-      `;
-      box.querySelector("#draw-result").textContent =
-        result.assignment.phonetic_hint || "請聯絡主辦人確認結果";
-      main.appendChild(box);
+      showResult(result.assignment);
       return;
     }
   } catch (error) {
-    // 尚未開放抽籤時，繼續載入許願表單
+    // 尚未抽籤時，繼續確認活動狀態
   }
 
   try {
     const result = await api("get_wish");
+
+    if (result.event_status === "closed") {
+      showNotice(
+        "活動已進入抽籤階段",
+        "許願已截止，請等待主辦人完成抽籤。"
+      );
+      return;
+    }
+
+    if (result.event_status === "drawn") {
+      showNotice(
+        "抽籤已完成",
+        "暫時無法讀取結果，請聯絡主辦人。"
+      );
+      return;
+    }
+
+    if (result.event_status === "preparing") {
+      showNotice(
+        "活動尚未開放許願",
+        "請稍後再來。"
+      );
+      return;
+    }
+
+    if (result.event_status !== "wishing") {
+      showNotice(
+        "目前無法載入活動",
+        "請聯絡主辦人確認活動狀態。"
+      );
+      return;
+    }
+
     createWishForm(result.wish || null);
+
   } catch (error) {
-    const notice = document.createElement("p");
-    notice.textContent = "載入失敗：" + error.message;
-    main.appendChild(notice);
+    showNotice("載入失敗", error.message);
   }
 }
 
